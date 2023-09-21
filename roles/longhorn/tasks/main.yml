@@ -1,0 +1,11 @@
+---
+# tasks file for longhorn
+
+- name: Debug longhorn values
+  ansible.builtin.debug:
+    var: longhorn_values
+
+- name: Apply longhorn chart
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/longhorn-chart.yaml.j2"

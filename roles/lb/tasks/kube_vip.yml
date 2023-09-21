@@ -1,0 +1,21 @@
+---
+- name: Ensure manifest dir exists
+  become: true
+  ansible.builtin.file:
+    path: /var/lib/rancher/rke2/server/manifests
+    state: directory
+    mode: '0755'
+
+- name: Write rbac manifest
+  become: true
+  ansible.builtin.copy:
+    src: rbac.yaml
+    dest: /var/lib/rancher/rke2/server/manifests/kubevip-rbac.yaml
+    mode: '0644'
+
+- name: Write vip manifest
+  become: true
+  ansible.builtin.template:
+    src: templates/vip.yaml.j2
+    dest: /var/lib/rancher/rke2/server/manifests/kubevip.yaml
+    mode: '0644'

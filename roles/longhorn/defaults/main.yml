@@ -1,0 +1,4 @@
+---
+# defaults file for longhorn
+longhorn_namespace: "longhorn-system"
+longhorn_values: {}

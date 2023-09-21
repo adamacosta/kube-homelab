@@ -1,0 +1,42 @@
+---
+# tasks file for rke2_agent
+- name: Rke2 configuration
+  become: true
+  ansible.builtin.template:
+    src: templates/rke2-config.yaml.j2
+    dest: /etc/rancher/rke2/config.yaml
+    owner: root
+    group: root
+    mode: '0640'
+
+- name: Install rke2 in agent mode
+  become: true
+  ansible.builtin.command:
+    cmd: ./rke2-install.sh
+    chdir: /tmp
+    creates: /var/lib/rancher/rke2/
+  environment:
+    INSTALL_RKE2_TYPE: agent
+  register: rke2_install_result
+  changed_when: rke2_install_result.rc == 0
+
+- name: Delete installer
+  ansible.builtin.file:
+    path: /tmp/rke2-install.sh
+    state: absent
+
+- name: Wait for cp ready
+  ansible.builtin.uri:
+    url: "https://{{ cp_leader_name }}.localdomain:9345/ping"
+    validate_certs: false
+  register: response
+  until: response.status == 200
+  delay: 30
+  retries: 20
+
+- name: Start rke2 service
+  become: true
+  ansible.builtin.systemd:
+    name: rke2-agent.service
+    state: started
+    enabled: true

@@ -1,0 +1,6 @@
+---
+# vars file for istio
+istio_addons:
+  grafana: false
+  kiali: true
+  prometheus: false

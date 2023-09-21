@@ -1,0 +1,27 @@
+---
+- hosts: rke2_servers
+  tasks:
+    - name: Delete kubeconfig
+      ansible.builtin.file:
+        path: "{{ ansible_user_dir }}/.kube"
+        state: absent
+
+- hosts: rke2
+  tasks:
+    - name: Uninstall rke2
+      become: true
+      ansible.builtin.command:
+        cmd: /usr/local/bin/rke2-uninstall.sh
+        removes: /var/lib/rancher
+
+    # - name: Remove vip
+    #   become: true
+    #   ansible.builtin.shell:
+    #     cmd: "ip addr del {{ vip_address }}/32 dev {{ ansible_default_ipv4.interface }}"
+
+- hosts: local
+  tasks:
+    - name: Delete kubeconfig
+      ansible.builtin.file:
+        path: "{{ lookup('env', 'HOME') }}/.kube/config"
+        state: absent

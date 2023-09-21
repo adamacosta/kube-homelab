@@ -1,0 +1,68 @@
+---
+- name: Check ntp
+  become: true
+  ansible.builtin.command:
+    cmd: timedatectl status
+  register: result
+  changed_when: false
+
+- name: Turn on ntp
+  become: true
+  ansible.builtin.command:
+    cmd: timedatectl set-ntp true
+  when: "'NTP service: inactive' in result.stdout"
+
+- name: Pacman install packages
+  become: true
+  community.general.pacman:
+    name:
+      - base-devel
+      - ccache
+      - pacman-contrib
+      - pbzip2
+      - pigz
+      - systemd-resolvconf
+    state: latest
+    update_cache: true
+
+- name: Full system upgrade
+  become: true
+  community.general.pacman:
+    update_cache: true
+    upgrade: true
+  register: pkglist
+
+- name: Reboot if new kernel installed
+  become: true
+  when: "'packages' in pkglist and 'linux' in pkglist['packages']"
+  ansible.builtin.reboot:
+
+- name: Configure makepkg
+  become: true
+  ansible.builtin.copy:
+    src: makepkg.conf
+    dest: /etc/makepkg.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Pacman use color output on tty
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    line: Color
+    regexp: "^#Color"
+
+- name: Pacman log to syslog
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    line: UseSyslog
+    regexp: "^#UseSyslog"
+
+- name: Enable paccache autoclean
+  become: true
+  ansible.builtin.systemd:
+    name: paccache.timer
+    state: started
+    enabled: true

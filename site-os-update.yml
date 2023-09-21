@@ -1,0 +1,14 @@
+---
+- hosts: rke2
+  tasks:
+    - name: Full system update
+      become: true
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      register: pkglist
+
+    - name: Reboot if new kernel installed
+      become: true
+      when: "'packages' in pkglist and 'linux' in pkglist['packages']"
+      ansible.builtin.reboot:

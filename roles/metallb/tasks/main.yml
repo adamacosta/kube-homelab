@@ -1,0 +1,10 @@
+---
+- name: Apply metallb chart
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/metallb-chart.yaml.j2"
+
+- name: Apply metallb config
+  kubernetes.core.k8s:
+    state: present
+    template: "templates/metallb-l2-config.yaml.j2"

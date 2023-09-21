@@ -1,0 +1,105 @@
+---
+# tasks file for istio
+- name: Create tmp dir
+  ansible.builtin.tempfile:
+    state: directory
+  register: tmp_dir
+
+- name: Get istioctl installer script
+  ansible.builtin.get_url:
+    url: https://istio.io/downloadIstio
+    dest: "{{ tmp_dir.path }}/istioctl-install.sh"
+    mode: '0755'
+
+- name: Install istioctl
+  ansible.builtin.command:
+    cmd: ./istioctl-install.sh
+    chdir: "{{ tmp_dir.path }}"
+  register: install_istioctl_result
+  changed_when: install_istioctl_result.rc == 0
+
+- name: Find istioctl
+  ansible.builtin.find:
+    paths: "{{ tmp_dir.path }}"
+    patterns: 'istioctl'
+    recurse: true
+  register: istioctl_bin
+
+- name: Copy bin to rke2 bins
+  become: true
+  ansible.builtin.copy:
+    src: "{{ istioctl_bin.files[0].path }}"
+    dest: /var/lib/rancher/rke2/bin/
+    owner: root
+    mode: '0755'
+    remote_src: true
+
+- name: Install istiod
+  become: true
+  ansible.builtin.command:
+    argv:
+      - /var/lib/rancher/rke2/bin/istioctl
+      - install
+      - --set
+      - profile={{ istio_profile }}
+      - -y
+  environment:
+    KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+  register: install_istiod_result
+  changed_when: install_istiod_result.rc == 0
+
+- name: Find istio addons
+  ansible.builtin.find:
+    paths: "{{ tmp_dir.path }}"
+    patterns: 'addons'
+    recurse: true
+    file_type: directory
+  register: istio_addons_path
+
+- name: Install grafana
+  become: true
+  when: istio_addons.grafana
+  ansible.builtin.command:
+    argv:
+      - /var/lib/rancher/rke2/bin/kubectl
+      - apply
+      - -f
+      - "{{ istio_addons_path.files[0].path }}/grafana.yaml"
+  environment:
+    KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+  register: install_grafana_result
+  changed_when: install_grafana_result.rc == 0
+
+- name: Install kiali
+  become: true
+  when: istio_addons.kiali
+  ansible.builtin.command:
+    argv:
+      - /var/lib/rancher/rke2/bin/kubectl
+      - apply
+      - -f
+      - "{{ istio_addons_path.files[0].path }}/kiali.yaml"
+  environment:
+    KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+  register: install_kiali_result
+  changed_when: install_kiali_result.rc == 0
+
+- name: Install prometheus
+  become: true
+  when: istio_addons.prometheus
+  ansible.builtin.command:
+    argv:
+      - /var/lib/rancher/rke2/bin/kubectl
+      - apply
+      - -f
+      - "{{ istio_addons_path.files[0].path }}/prometheus.yaml"
+  environment:
+    KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+  register: install_prometheus_result
+  changed_when: install_prometheus_result.rc == 0
+
+- name: Cleanup tmp dir
+  when: tmp_dir.path is defined
+  ansible.builtin.file:
+    path: "{{ tmp_dir.path }}"
+    state: absent

@@ -1,0 +1,4 @@
+---
+# tasks file for lb
+- name: Decide lb type
+  include_tasks: "{{ lb_type }}.yml"

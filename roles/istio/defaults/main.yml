@@ -1,0 +1,8 @@
+---
+# defaults file for istio
+istio_addons:
+  grafana: false
+  kiali: false
+  prometheus: false
+
+istio_profile: default

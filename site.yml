@@ -1,0 +1,49 @@
+---
+# - hosts: local
+#   roles:
+#     - controller/pre
+#   vars_files:
+#     - group_vars/rke2_servers.yml
+
+# - hosts: rke2
+#   roles:
+#     - common
+#     - rke2/common
+
+# - hosts: rke2_servers
+#   roles:
+#     - rke2/server
+
+# - hosts: rke2_agents
+#   roles:
+#     - rke2/agent
+
+# - hosts: rke2_servers
+#   tasks:
+#     - name: Istio role
+#       ansible.builtin.include_role:
+#         name: istio
+#       when: addons.istio
+#       run_once: true
+
+# - hosts: local
+#   roles:
+#     - controller/post
+
+- hosts: local
+  tasks:
+    - name: Install metallb
+      ansible.builtin.include_role:
+        name: metallb
+      when: addons.metallb
+
+- hosts: rke2_agents
+  roles:
+    - longhorn/prep
+
+- hosts: local
+  tasks:
+    - name: Install longhorn
+      ansible.builtin.include_role:
+        name: longhorn
+      when: addons.longhorn

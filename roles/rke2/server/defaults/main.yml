@@ -1,0 +1,6 @@
+---
+# defaults file for rke2_server
+cni: canal
+disable: []
+disable_cloud_controller: true
+taint_cp: true

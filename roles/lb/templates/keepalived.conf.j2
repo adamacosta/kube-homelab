@@ -1,0 +1,49 @@
+global_defs {
+	router_id {{ vip_router_id }}
+}
+
+vrrp_instance APIServerVIP {
+    # Interface to bind to
+    interface {{ ansible_default_ipv4.interface }}
+
+    # This should be set to MASTER on the first node and BACKUP on the other two
+{% if ansible_hostname == cp_leader_name %}
+    state MASTER
+{% else %}
+	state BACKUP
+{% endif %}
+    # This should be 50+ lower on the other two nodes to enable the lead election
+{% if ansible_hostname == cp_leader_name %}
+    priority 100
+{% else %}
+	priority 50
+{% endif %}
+
+    # Address of this particular node
+    mcast_src_ip {{ ansible_default_ipv4.address }}
+
+    # A unique ID if more than one service is being defined
+    virtual_router_id 61
+    advert_int 1
+    nopreempt
+
+    # Authentication for keepalived to speak with one another
+    authentication {
+        auth_type PASS
+        auth_pass $bloody_secure_password
+    }
+
+    # Other Nodes in Cluster
+    unicast_peer {
+{% for host in group['k8s_cp_lbs'] %}
+    {% if ansible_hostname != hostvars[host]['ansible_facts']['ansible_hostname'] %}
+        {{ hostvars[host]['ansible_facts']['ansible_default_ipv4']['address'] }}
+    {% endif %}
+{% endfor %}
+    }
+
+    # Kubernetes Virtual IP
+    virtual_ipaddress {
+        {{ vip_address }}/16
+    }
+}

@@ -1,0 +1,27 @@
+---
+cni: {{ cni }}
+{% for item in disable %}
+{% if loop.first %}
+disable:
+{% endif %}
+  - {{ item }}
+{% endfor %}
+{% if disable_cloud_controller %}
+disable-cloud-controller: true
+{% endif %}
+{% if taint_cp %}
+node-taint:
+  - "CriticalAddonsOnly=true:NoExecute"
+{% endif %}
+{% if ansible_hostname != cp_leader_name %}
+server: https://{{ vip_router_id }}.localdomain:9345
+{% endif %}
+token: {{ token }}
+tls-san:
+{% for host in k8s_cp_lb_hosts %}
+  - {{ host }}.localdomain
+{% endfor %}
+  - {{ ansible_hostname }}
+  - {{ ansible_hostname }}.local
+  - {{ ansible_hostname }}.localdomain
+write-kubeconfig-mode: "0640"

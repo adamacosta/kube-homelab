@@ -1,0 +1,75 @@
+---
+# tasks file for rke2_server
+- name: Install additional packages
+  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}.yml"
+
+- name: Apply load balancer role
+  ansible.builtin.include_role:
+    name: lb
+  when: groups['rke2_servers'] | length > 1
+
+- name: Apply bgp role
+  ansible.builtin.include_role:
+    name: bgp
+  when: cni == 'cilium'
+
+- name: Rke2 configuration
+  become: true
+  ansible.builtin.template:
+    src: templates/rke2-config.yaml.j2
+    dest: /etc/rancher/rke2/config.yaml
+    owner: root
+    group: root
+    mode: '0640'
+
+- name: Install rke2 in server mode
+  become: true
+  ansible.builtin.command:
+    cmd: ./rke2-install.sh
+    chdir: /tmp
+    creates: /var/lib/rancher/rke2/bin
+  environment:
+    INSTALL_RKE2_TYPE: server
+  register: rke2_install_result
+  changed_when: rke2_install_result.rc == 0
+
+- name: Write dashboard manifest
+  become: true
+  when: addons.dashboard
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+    dest: /var/lib/rancher/rke2/server/manifests/kubernetes-dashboard.yaml
+    mode: '0644'
+
+- name: Delete installer
+  ansible.builtin.file:
+    path: /tmp/rke2-install.sh
+    state: absent
+
+- name: Init leader
+  when: ansible_hostname == cp_leader_name
+  ansible.builtin.include_tasks: init_leader.yml
+
+- name: Init servers
+  when: ansible_hostname != cp_leader_name
+  ansible.builtin.include_tasks: init_server.yml
+
+- name: Wait for kubeconfig
+  ansible.builtin.wait_for:
+    path: /etc/rancher/rke2/rke2.yaml
+
+- name: Create kube directory
+  ansible.builtin.file:
+    path: "{{ ansible_user_dir }}/.kube"
+    mode: '0750'
+    state: directory
+
+- name: Copy kubeconfig to user home
+  become: true
+  ansible.builtin.copy:
+    src: /etc/rancher/rke2/rke2.yaml
+    dest: "{{ ansible_user_dir }}/.kube/config"
+    remote_src: true
+    owner: "{{ ansible_user_uid }}"
+    group: "{{ ansible_user_gid }}"
+    mode: '0640'

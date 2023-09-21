@@ -1,0 +1,60 @@
+---
+- name: Distro tasks
+  include_tasks: "{{ ansible_os_family | lower }}.yml"
+
+- name: Ensure keepalived conf dir exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/keepalived
+    state: directory
+    mode: '0750'
+
+- name: Keepalived configuration
+  become: true
+  ansible.builtin.template:
+    src: templates/keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    mode: '0640'
+
+- name: Ensure haproxy conf dir exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/haproxy
+    state: directory
+    mode: '0750'
+
+- name: HAProxy configuration
+  become: true
+  ansible.builtin.template:
+    src: templates/haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    mode: '0640'
+
+- name: Bind mount journald socket into haproxy chroot
+  become: true
+  ansible.posix.mount:
+    path: /var/lib/haproxy/dev/log
+    src: /dev/log
+    opts: bind
+    state: mounted
+    fstype: none
+
+- name: Persist journald bind mount in fstab
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    line: /dev/log /var/lib/haproxy/dev/log none defaults,bind 0 0
+
+- name: Start keepalived
+  become: true
+  ansible.builtin.systemd:
+    name: keepalived.service
+    state: started
+    enabled: true
+
+- name: Start haproxy
+  become: true
+  ansible.builtin.systemd:
+    name: haproxy.service
+    state: started
+    enabled: true

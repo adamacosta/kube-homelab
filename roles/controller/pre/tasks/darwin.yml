@@ -1,0 +1,21 @@
+---
+- name: Brew install packages
+  community.general.homebrew:
+    name:
+      - jq
+      - yq
+      - kubectl
+      - kustomize
+      - helm
+      - sshuttle
+      - sops
+
+- name: Brew install flux
+  when: addons.flux
+  community.general.homebrew:
+    name: flux
+
+- name: Brew install istioctl
+  when: addons.istio
+  community.general.homebrew:
+    name: istioctl

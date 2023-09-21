@@ -1,0 +1,28 @@
+global
+    maxconn     20000
+    log         /dev/log local0
+    user        haproxy
+    chroot      /var/lib/haproxy
+    pidfile     /run/haproxy.pid
+    daemon
+
+frontend http_stats
+   bind *:8080
+   mode http
+   stats uri /haproxy?stats
+
+frontend kube_api_server
+    bind 0.0.0.0:6443
+    mode tcp
+    option tcplog
+    timeout client  10800s
+    default_backend k8s-cp-nodes
+
+backend k8s-cp-nodes
+    mode tcp
+    option tcplog
+    balance leastconn
+    timeout server  10800s
+{% for host in group['k8s_cp_lbs'] %}
+    server k8s-cp-{{ loop.index }} {{ hostvars[host]['ansible_facts']['ansible_default_ipv4']['address'] }}:6443 check
+{% endfor %}

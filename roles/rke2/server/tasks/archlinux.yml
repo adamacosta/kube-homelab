@@ -1,0 +1,8 @@
+---
+- name: Pacman install packages
+  become: true
+  community.general.pacman:
+    name:
+      - jq
+      - yq
+    update_cache: true

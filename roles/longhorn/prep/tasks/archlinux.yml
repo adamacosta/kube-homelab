@@ -1,0 +1,10 @@
+---
+
+- name : Install packages
+  become: true
+  community.general.pacman:
+    name:
+      - open-iscsi
+      - nfs-utils
+    state: latest
+    update_cache: true

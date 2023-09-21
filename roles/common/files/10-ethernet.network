@@ -1,0 +1,17 @@
+# Begin /etc/systemd/network/10-ethernet.network
+
+[Match]
+Type=ether
+
+[Network]
+DHCP=yes
+MulticastDNS=yes
+IPv6PrivacyExtensions=yes
+
+[DHCPv4]
+RouteMetric=512
+
+[DHCPv6]
+RouteMetric=512
+
+# End /etc/systemd/network/10-ethernet.network

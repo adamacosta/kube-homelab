@@ -1,0 +1,15 @@
+---
+- name: Wait for cp leader ready
+  ansible.builtin.uri:
+    url: "https://{{ vip_router_id }}.localdomain:9345/ping"
+    validate_certs: false
+  register: response
+  until: response.status == 200
+  delay: 90
+
+- name: Start rke2 service
+  become: true
+  ansible.builtin.systemd:
+    name: rke2-server.service
+    state: started
+    enabled: true

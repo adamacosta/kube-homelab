@@ -1,0 +1,15 @@
+---
+addons:
+  fleet: false
+  istio: false
+  longhorn: true
+  metallb: true
+
+metallb_ip_pool: "192.168.1.200-192.168.1.254"
+
+longhorn_values:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    host: longhorn.localdomain
+  enablePSP: true  

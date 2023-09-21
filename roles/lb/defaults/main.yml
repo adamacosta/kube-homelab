@@ -1,0 +1,4 @@
+---
+# defaults file for lb
+lb_type: kube_vip
+svc_enable: true

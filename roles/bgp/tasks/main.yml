@@ -1,0 +1,22 @@
+---
+# tasks for bgp
+- name: Ensure manifest dir exists
+  become: true
+  ansible.builtin.file:
+    path: /var/lib/rancher/rke2/server/manifests
+    state: directory
+    mode: '0755'
+
+- name: Write helm chart config manifest
+  become: true
+  ansible.builtin.copy:
+    src: rke2-cilium-config.yaml
+    dest: /var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml
+    mode: '0644'
+
+- name: Write bgp config manifest
+  become: true
+  ansible.builtin.template:
+    src: templates/bgp-config.yaml.j2
+    dest: /var/lib/rancher/rke2/server/manifests/bgp-config.yaml
+    mode: '0644'

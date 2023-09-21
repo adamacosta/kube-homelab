@@ -1,0 +1,4 @@
+---
+# defaults file for rke2/common
+journald_max_size: '4G'
+journald_max_retention: '2592000' # 90 days

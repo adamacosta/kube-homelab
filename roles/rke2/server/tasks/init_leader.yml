@@ -1,0 +1,15 @@
+---
+- name: Start rke2 service
+  become: true
+  ansible.builtin.systemd:
+    name: rke2-server.service
+    state: started
+    enabled: true
+
+- name: Copy kubeconfig
+  become: true
+  ansible.builtin.fetch:
+    src: /etc/rancher/rke2/rke2.yaml
+    dest: "{{ lookup('env', 'HOME') }}/.kube/config"
+    flat: true
+  run_once: true
